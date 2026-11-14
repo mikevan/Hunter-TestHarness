@@ -410,12 +410,13 @@ void C5SdLog::endRead(bool &usedBus)
     reopenLog();
 }
 
-void C5SdLog::noteLink(bool connected, const char *peer, uint32_t nowMs)
+void C5SdLog::noteLink(bool connected, const char *peer, uint32_t nowMs, uint16_t sessionId)
 {
     SdRecord r;
     r.kind = SdRecordKind::Link;
     r.uptimeMs = nowMs;
-    copyText(r.text, sizeof(r.text), connected ? "connected" : "disconnected");
+    snprintf(r.text, sizeof(r.text), "%s session=%04X", connected ? "connected" : "disconnected",
+        static_cast<unsigned>(sessionId));
     copyText(r.peer, sizeof(r.peer), peer);
     push(r);
 }
@@ -438,9 +439,10 @@ bool C5SdLog::service(uint32_t nowMs, uint32_t bootCount, const char *resetReaso
         _bootLookDone = true; // once, right after boot: find the card
         due = true;
     } else {
-        due = _policy.due(queued(), linkChanged);
+        due = _policy.due(queued(), linkChanged, nowMs);
     }
     if (!due) return false;
+    _policy.completed(); // begin a fresh timer for records queued after this attempt
 
     if (!_c.fileOpen && !openNewFile(nowMs, bootCount, resetReason)) {
         discardQueued(); // no card: nothing to keep them for

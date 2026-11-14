@@ -565,6 +565,25 @@ void a_tiny_ring_never_divides_to_zero()
     CHECK_TRUE(w.due(1, true));
 }
 
+void sparse_records_flush_on_a_bounded_timer()
+{
+    SdWritePolicy w(1024);
+    CHECK_FALSE(w.due(1, false, 100));
+    CHECK_FALSE(w.due(1, false, 2099));
+    CHECK_TRUE(w.due(1, false, 2100));
+    w.completed();
+    CHECK_FALSE(w.due(1, false, 2101));
+    CHECK_FALSE(w.due(0, false, 2200));
+    CHECK_FALSE(w.due(1, false, 4000));
+    CHECK_TRUE(w.due(1, false, 6000));
+    w.completed();
+    CHECK_FALSE(w.due(1, false, 0xffffff00U));
+    CHECK_FALSE(w.due(1, false, 0x000006cfU));
+    CHECK_TRUE(w.due(1, false, 0x000006d0U));
+    CHECK_TRUE(w.due(1, true, 0x000006d1U));
+    CHECK_TRUE(w.due(512, false, 0x000006d1U));
+}
+
 void log_file_names_parse_and_format()
 {
     CHECK_INT(1, logFileSerial("hunter_0001.log"));
@@ -922,6 +941,7 @@ int main(int argc, char **argv)
     CASE(a_write_is_due_when_half_the_ring_waits);
     CASE(a_link_change_writes_whatever_waits);
     CASE(a_tiny_ring_never_divides_to_zero);
+    CASE(sparse_records_flush_on_a_bounded_timer);
     CASE(log_file_names_parse_and_format);
     CASE(the_ring_keeps_order_and_counts_what_it_drops);
     CASE(untrusted_text_is_quoted_and_escaped_without_loss);

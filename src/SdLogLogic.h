@@ -27,7 +27,8 @@
 //     flashes it. The card is touched only when it must be (option c,
 //     Michael, 2026-10-03): once right after boot to find it, then only
 //     when a write is due, which is when half the record ring is waiting or
-//     when the watch connects or disconnects. A card inserted after boot is
+//     when the watch connects or disconnects, or after two seconds with records
+//     waiting. A card inserted after boot is
 //     found at the next write. Up to half the ring is lost if power is cut.
 //   - With a card, every record goes to it for the whole run, watch
 //     connected or not. A card that fails (removed, write error) is looked
@@ -69,10 +70,23 @@ public:
         if (linkChanged) return true;
         return _threshold > 0 && queued >= _threshold;
     }
+    // Bound sparse-record latency as well as buffer occupancy. Call on every
+    // service pass. This schedules a write attempt; card errors and USB pulls
+    // can still delay persistence. Unsigned subtraction handles uptime wrap.
+    bool due(uint16_t queued, bool linkChanged, uint32_t nowMs)
+    {
+        if (queued == 0) { _pending = false; return false; }
+        if (!_pending) { _pending = true; _pendingSince = nowMs; }
+        return due(queued, linkChanged) ||
+            static_cast<uint32_t>(nowMs - _pendingSince) >= 2000U;
+    }
+    void completed() { _pending = false; }
     uint16_t threshold() const { return _threshold; }
 
 private:
     uint16_t _threshold;
+    uint32_t _pendingSince = 0;
+    bool _pending = false;
 };
 
 // --- File names ----------------------------------------------------------

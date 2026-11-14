@@ -107,7 +107,7 @@ public:
                       uint32_t nowMs, uint32_t bootCount, bool &usedBus);
 
     // Loop task.
-    void noteLink(bool connected, const char *peer, uint32_t nowMs);
+    void noteLink(bool connected, const char *peer, uint32_t nowMs, uint16_t sessionId);
     void noteMode(const char *mode, uint32_t nowMs);
     // Loop task, every pass. The first call looks for the card; after that
     // the card is touched only when a write is due. linkChanged: the watch

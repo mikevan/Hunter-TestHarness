@@ -96,6 +96,17 @@ uint16_t nonZeroSessionId()
 
 } // namespace
 
+#if defined(LAYERTIME_HARNESS_APP)
+bool C5Link::sendHarness(const uint8_t *frame, size_t len)
+{
+    if (!_connected || !gData || len != 20) return false;
+    lockIo();
+    const bool sent = gData->notify(frame, len);
+    unlockIo();
+    return sent;
+}
+#endif
+
 void C5Link::lockIo() const
 {
     if (_io) xSemaphoreTake(static_cast<SemaphoreHandle_t>(_io), portMAX_DELAY);
@@ -117,6 +128,9 @@ bool C5Link::begin(uint16_t capabilities)
 #endif
     _status.sessionId = _identity.sessionId;
     _status.changeSeq = 1;
+#if defined(LAYERTIME_HARNESS_APP)
+    _status.changeSeq = 0; // This source has no ordinary RF event mirror to poll.
+#endif
 
     uint8_t mac[6] = {};
     esp_read_mac(mac, ESP_MAC_BT);
@@ -124,7 +138,11 @@ bool C5Link::begin(uint16_t capabilities)
     // five base-32 characters from its own address (2026-11-05), "Hunter-C5-BSV72".
     char chip[8];
     chipShortName(ESP.getChipModel(), chip, sizeof(chip));
+#if defined(LAYERTIME_HARNESS_APP)
+    if (!formatUnitName("Hunter-Test", chip, mac, _name, sizeof(_name))) snprintf(_name, sizeof(_name), "Hunter-Test");
+#else
     if (!formatUnitName("Hunter", chip, mac, _name, sizeof(_name))) snprintf(_name, sizeof(_name), "Hunter");
+#endif
 
     if (!NimBLEDevice::init(_name)) return false;
     // The frame ceiling is 20 bytes by contract; a larger MTU only matters

@@ -1616,7 +1616,7 @@ void loop()
         linkChanged = true;
         gWasConnected = gLink.connected();
         if (gWasConnected) ++gConnects; else ++gDisconnects;
-        gSdLog.noteLink(gWasConnected, gWasConnected ? gLink.peerAddress() : "", now);
+        gSdLog.noteLink(gWasConnected, gWasConnected ? gLink.peerAddress() : "", now, gLink.sessionId());
         Serial.printf("Link %s %s at %lu ms\n", gWasConnected ? "connected to" : "disconnected, advertising again;",
                       gWasConnected ? gLink.peerAddress() : "", static_cast<unsigned long>(now));
         if (!gScreenAwake) showStatus(); // no redraw while lit (snapshot)
