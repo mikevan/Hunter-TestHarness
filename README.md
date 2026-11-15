@@ -14,10 +14,10 @@ The dongle uses Hunter's shared core, commands, event records, packet evidence a
 
 | Time from Start | Evidence |
 | --- | --- |
-| 0–19 seconds | Baseline; no fixture detection. |
-| 20–27 seconds | Eight deauthentication sightings; the packet window contains controlled deauthentication frames. |
-| 32–35 seconds | Four EAPOL M1 sightings from the same observed transmitter address, with a complete EAPOL-Key packet body. |
-| 50–53 seconds | Four structured, unverified Remote ID Basic ID sightings. The normal detail field preserves the service-data bytes. |
+| 0â€“19 seconds | Baseline; no fixture detection. |
+| 20â€“27 seconds | Eight deauthentication sightings; the packet window contains controlled deauthentication frames. |
+| 32â€“35 seconds | Four EAPOL M1 sightings from the same observed transmitter address, with a complete EAPOL-Key packet body. |
+| 50â€“53 seconds | Four structured, unverified Remote ID Basic ID sightings. The normal detail field preserves the service-data bytes. |
 | 61 seconds | Input finishes; **Data done; monitoring**. Only the operator's Stop ends monitoring. |
 
 Vixen's ordinary analysis workflow should move from waiting to analyzing and then display the supported sequence and its limitations. A timeout, unavailable model or rejected result is a test failure to preserve, not an all-clear. The model interprets a bounded evidence pattern; references and exact timing arithmetic come from procedural code. Its concise finding is rendered from the accepted pattern and preserved facts.
@@ -46,3 +46,5 @@ python test/run_harness_tests.py --cxx g++
 ```
 
 Use the default harness target only for the spare prototype. Identify its hardware before upload. The real Hunter device is separate. Serial `INFO` is read-only bench status; field operation needs no computer. [The legacy Hunter reference](docs/legacy-readme.md) retains inherited documentation.
+
+The [three incremental test definitions](docs/incremental-field-tests.md) specify the next scenarios and their pass criteria. They remain planned until the repaired baseline is verified.

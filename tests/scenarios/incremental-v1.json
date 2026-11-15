@@ -1,0 +1,183 @@
+{
+  "schema": "hunter-incremental-field-plan/1",
+  "status": "defined-not-executed",
+  "trainingAllowed": false,
+  "scope": "Synthetic RF observations over live normal Hunter BLE; no RF attack or Remote ID broadcast transmission",
+  "frozenApplication": "Vixen 141 after repaired-baseline acceptance; same model, settings, prompt, grammar and guards for all three new tests",
+  "modelSha256": "3d529dd89436601669d6d92f9c67793f35d7ba3a71bfe15cb44ae9547e7f194c",
+  "configuredWindowMs": 90000,
+  "reportDeadlineAfterRequiredEvidenceMs": 30000,
+  "referenceAnswersRemainOutsideModelInput": true,
+  "baseline": {
+    "id": "B0-repaired-baseline",
+    "observations": [
+      {
+        "kind": "deauth",
+        "source": "network-A",
+        "firstMs": 20000,
+        "lastMs": 27000,
+        "count": 8
+      },
+      {
+        "kind": "eapol",
+        "source": "network-A",
+        "firstMs": 32000,
+        "lastMs": 35000,
+        "count": 4
+      },
+      {
+        "kind": "remote_id",
+        "source": "remote-1",
+        "firstMs": 50000,
+        "lastMs": 53000,
+        "count": 4
+      }
+    ],
+    "expectedPattern": "disconnect_sequence_then_remote_id",
+    "expectedGapMs": 30000,
+    "expectedNativeWindows": {
+      "deauthFrames": 48,
+      "eapolFrames": 24
+    },
+    "status": "Prior interpretation passed; repaired preservation awaits operator rerun"
+  },
+  "tests": [
+    {
+      "id": "T1-timing-and-duplicates",
+      "adds": "Irregular sighting intervals and repeated delivery of identical summaries/text without increasing source counts",
+      "observations": [
+        {
+          "kind": "deauth",
+          "source": "network-A",
+          "firstMs": 20000,
+          "lastMs": 29000,
+          "count": 8
+        },
+        {
+          "kind": "eapol",
+          "source": "network-A",
+          "firstMs": 37000,
+          "lastMs": 43000,
+          "count": 4
+        },
+        {
+          "kind": "remote_id",
+          "source": "remote-1",
+          "firstMs": 82000,
+          "lastMs": 87000,
+          "count": 4
+        }
+      ],
+      "duplicateSummaryDeliveriesPerStage": 2,
+      "expectedPattern": "disconnect_sequence_then_remote_id",
+      "expectedGapMs": 62000,
+      "expectedPositiveNotificationCount": 1,
+      "duplicateTransportRequirement": "Ordinary matching request IDs/framing; repeated replies do not create new source observations"
+    },
+    {
+      "id": "T2-separate-the-streams",
+      "adds": "Unmatched newer deauth on B and unmatched EAPOL on C; retain T1 timing and repeated deliveries",
+      "observations": [
+        {
+          "kind": "deauth",
+          "source": "network-A",
+          "firstMs": 20000,
+          "lastMs": 29000,
+          "count": 8
+        },
+        {
+          "kind": "eapol",
+          "source": "network-A",
+          "firstMs": 37000,
+          "lastMs": 43000,
+          "count": 4
+        },
+        {
+          "kind": "deauth",
+          "source": "network-B",
+          "firstMs": 55000,
+          "lastMs": 62000,
+          "count": 8
+        },
+        {
+          "kind": "eapol",
+          "source": "network-C",
+          "firstMs": 65000,
+          "lastMs": 71000,
+          "count": 4
+        },
+        {
+          "kind": "remote_id",
+          "source": "remote-1",
+          "firstMs": 82000,
+          "lastMs": 87000,
+          "count": 4
+        }
+      ],
+      "duplicateSummaryDeliveriesPerStage": 2,
+      "expectedPattern": "disconnect_sequence_then_remote_id",
+      "requiredPair": [
+        "network-A",
+        "network-A"
+      ],
+      "forbiddenPair": [
+        "network-B",
+        "network-C"
+      ],
+      "expectedGapMs": 62000,
+      "expectedPositiveNotificationCount": 1
+    },
+    {
+      "id": "T3-gap-and-boundary",
+      "adds": "Source keeps recording while BLE unavailable 28\u201358 seconds; follow-on is 91 seconds after first A deauth",
+      "observations": [
+        {
+          "kind": "deauth",
+          "source": "network-A",
+          "firstMs": 20000,
+          "lastMs": 29000,
+          "count": 8
+        },
+        {
+          "kind": "eapol",
+          "source": "network-A",
+          "firstMs": 37000,
+          "lastMs": 43000,
+          "count": 4
+        },
+        {
+          "kind": "deauth",
+          "source": "network-B",
+          "firstMs": 55000,
+          "lastMs": 62000,
+          "count": 8
+        },
+        {
+          "kind": "eapol",
+          "source": "network-C",
+          "firstMs": 65000,
+          "lastMs": 71000,
+          "count": 4
+        },
+        {
+          "kind": "remote_id",
+          "source": "remote-1",
+          "firstMs": 111000,
+          "lastMs": 116000,
+          "count": 4
+        }
+      ],
+      "linkUnavailableMs": [
+        28000,
+        58000
+      ],
+      "sourceMustNotReboot": true,
+      "sourceClockMustRemainSame": true,
+      "expectedPattern": "outside_window",
+      "expectedGapMs": 91000,
+      "expectedPositiveNotificationCount": 0,
+      "missingEvidenceMustBeExplicit": true,
+      "recoverablePacketWindowsMustBeRestored": true
+    }
+  ]
+}
