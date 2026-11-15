@@ -32,7 +32,26 @@ uint8_t *gPcap = nullptr;
 uint32_t gLoggedRun = 0, gLastDisplay = 0, gTransfers = 0;
 bool gWasConnected = false, gWasRunning = false, gWasComplete = false;
 String gSerial;
-void applyLed() { gLed.off(); }
+// Current LilyGO C5 boards wire APA102 clock/data to GPIO 4/5, separate
+// from LCD/SD SPI (6/2). Keep the legacy shared-bus off command as well.
+// Pin map: https://github.com/Xinyuan-LilyGO/T-Dongle-C5/blob/master/readme.md
+void offDedicatedLed() {
+    constexpr int clock = 4, data = 5;
+    pinMode(clock, OUTPUT); pinMode(data, OUTPUT);
+    uint8_t frame[kApa102FrameBytes]; encodeApa102(Rgb{0,0,0}, 0, frame);
+    for (uint8_t byte : frame) for (int bit=7; bit>=0; --bit) {
+        digitalWrite(clock, LOW); digitalWrite(data, (byte >> bit) & 1);
+        delayMicroseconds(1); digitalWrite(clock, HIGH); delayMicroseconds(1);
+    }
+    digitalWrite(clock, LOW); digitalWrite(data, LOW);
+}
+void applyLed() { gLed.off(); offDedicatedLed(); }
+void statusLine(uint8_t line, const char *text) {
+    static char previous[C5Display::kLineCount][64] = {};
+    if (strncmp(previous[line], text, sizeof(previous[line])) == 0) return;
+    snprintf(previous[line], sizeof(previous[line]), "%s", text);
+    gDisplay.setLine(line, text);
+}
 
 // Seed valid 802.11 deauthentication frames into the normal evidence store.
 // This never transmits Wi-Fi or BLE advertisements representing a real tracker.
@@ -93,23 +112,26 @@ void noteRun(uint32_t now) {
 void showStatus(uint32_t now) {
     if (now - gLastDisplay < 500) return;
     gLastDisplay = now;
-    gDisplay.setLine(0, "Hunter-Test");
-    gDisplay.setLine(1, gLink.connected() ? "Phone connected" : "Connect Vixen");
+    gDisplay.setIndicators(gLink.connected() ? LinkIndicator::Connected : LinkIndicator::NoWatch, MeshIndicator::NotConnected);
+    statusLine(0, "Hunter-Test");
+    statusLine(1, gLink.connected() ? "Phone connected" : "Connect Vixen");
     char state[40];
     if (gMonitor.running() && gMonitor.complete()) snprintf(state, sizeof(state), "Data done; monitoring");
-    else if (gMonitor.running()) snprintf(state, sizeof(state), "Running t+%lus", static_cast<unsigned long>(gMonitor.elapsedMs()/1000));
+    else if (gMonitor.running()) snprintf(state, sizeof(state), "Scenario running");
     else snprintf(state, sizeof(state), "%s", gMonitor.complete() ? "Stopped / data done" : "Ready / stopped");
-    gDisplay.setLine(2, state);
+    statusLine(2, state);
     snprintf(state, sizeof(state), "%u events / %s", gCore.eventCount(), gSdLog.hasCardLog() ? "SD ready" : "NO SD LOG");
-    gDisplay.setLine(3, state);
-    gDisplay.setLine(4, gMonitor.running() ? "BOOT or phone: Stop" : "BOOT or phone: Start");
+    statusLine(3, state);
+    statusLine(4, gMonitor.running() ? "BOOT or phone: Stop" : "BOOT or phone: Start");
 }
 }
 void setup() {
     Serial.begin(115200); Serial.setTxTimeoutMs(2);
     C5SdLog::holdCardDeselected(); pinMode(pins::kBootButton, INPUT);
-    gDisplay.begin(); gLed.begin(); gLed.off();
-    gSdLog.begin(); gSdLog.service(millis(), 1, "harness", false); gLed.off();
+    offDedicatedLed();
+    gDisplay.setIndicators(LinkIndicator::NoWatch, MeshIndicator::NotConnected);
+    gDisplay.begin(); gLed.begin(); applyLed();
+    gSdLog.begin(); gSdLog.service(millis(), 1, "harness", false); applyLed();
     void *pool = heap_caps_malloc(evidence::EvidenceStore::poolBytes(), MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT);
     if (pool) gEvidence.attach(pool, evidence::EvidenceStore::poolBytes());
     gPcap = static_cast<uint8_t *>(heap_caps_malloc(evidence::kMaxWindowPcapBytes, MALLOC_CAP_SPIRAM | MALLOC_CAP_8BIT));
@@ -122,7 +144,7 @@ void setup() {
     if (gEvidence.attached()) caps |= link::evidence::kCapRawCapture;
     gServer.setMemoryOnly(!gSdLog.hasCardLog()); gServer.refresh();
     const bool ok = gLink.begin(caps); gLink.updateStatus();
-    Serial.printf("Hunter-TestHarness v3 normal-protocol name=%s session=%u ble=%u sd=%u evidence=%u led=off\n",
+    Serial.printf("Hunter-TestHarness v4 normal-protocol name=%s session=%u ble=%u sd=%u evidence=%u led=off\n",
                   gLink.advertisedName(), gLink.sessionId(), ok, gSdLog.hasCardLog(), gEvidence.attached());
 }
 void loop() {
@@ -151,7 +173,7 @@ void loop() {
         char c = Serial.read();
         if (c == '\n') {
             gSerial.trim();
-            if (gSerial == "INFO") Serial.printf("HARNESS_INFO v3 normal-protocol connected=%u running=%u fixtureComplete=%u run=%lu elapsed=%lu events=%u sd=%u file=%s lines=%lu writeErrors=%lu dropped=%lu evidenceFiles=%lu requests=%lu lastCommand=%u result=%u led=off\n",
+            if (gSerial == "INFO") Serial.printf("HARNESS_INFO v4 normal-protocol connected=%u running=%u fixtureComplete=%u run=%lu elapsed=%lu events=%u sd=%u file=%s lines=%lu writeErrors=%lu dropped=%lu evidenceFiles=%lu requests=%lu lastCommand=%u result=%u led=off\n",
                 gLink.connected(), gMonitor.running(), gMonitor.complete(), static_cast<unsigned long>(gMonitor.runId()), static_cast<unsigned long>(gMonitor.elapsedMs()),
                 gCore.eventCount(), gSdLog.hasCardLog(), gSdLog.counters().fileName, static_cast<unsigned long>(gSdLog.counters().lines),
                 static_cast<unsigned long>(gSdLog.counters().writeErrors), static_cast<unsigned long>(gSdLog.dropped()),

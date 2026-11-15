@@ -39,3 +39,7 @@ Firmware v3 separates fixture completion from monitoring state. At 61 seconds th
 ## Sensor-selection instruction correction
 
 The operator saw two deauth events from separate starts and no AirTag. The recorded sensor mask excluded AirTag. The earlier instruction to select All Sensors was incorrect for this Vixen version: its quick preset uses the default list, which excludes trackers. The self-service steps now require enabling AirTag explicitly in Mission alongside Deauth and avoiding the default preset afterward. No app setting is changed by the assistant, and Vixen itself remains unchanged.
+
+## LED and connection indicators
+
+The owner confirmed the RGB LED is dark after the dedicated GPIO 4/5 shutdown update. The manufacturer's current C5 pin map assigns APA102 clock/data to those pins; earlier hardware shared the display SPI bus, so the legacy bus shutdown remains too. Repeated writes of unchanged display labels were removed. The eye follows the actual phone link; the face/cheek remains red with no implemented mesh connection. No mesh connection is invented for the fixture.
