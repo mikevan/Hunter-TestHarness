@@ -30,7 +30,7 @@ evidence::EvidenceStore gEvidence;
 ButtonDebouncer gButton;
 uint8_t *gPcap = nullptr;
 uint32_t gLoggedRun = 0, gLastDisplay = 0, gTransfers = 0;
-bool gWasConnected = false, gWasRunning = false;
+bool gWasConnected = false, gWasRunning = false, gWasComplete = false;
 String gSerial;
 void applyLed() { gLed.off(); }
 
@@ -96,8 +96,9 @@ void showStatus(uint32_t now) {
     gDisplay.setLine(0, "Hunter-Test");
     gDisplay.setLine(1, gLink.connected() ? "Phone connected" : "Connect Vixen");
     char state[40];
-    if (gMonitor.running()) snprintf(state, sizeof(state), "Running t+%lus", static_cast<unsigned long>(gMonitor.elapsedMs()/1000));
-    else snprintf(state, sizeof(state), "%s", gMonitor.complete() ? "Run complete" : "Ready / stopped");
+    if (gMonitor.running() && gMonitor.complete()) snprintf(state, sizeof(state), "Data done; monitoring");
+    else if (gMonitor.running()) snprintf(state, sizeof(state), "Running t+%lus", static_cast<unsigned long>(gMonitor.elapsedMs()/1000));
+    else snprintf(state, sizeof(state), "%s", gMonitor.complete() ? "Stopped / data done" : "Ready / stopped");
     gDisplay.setLine(2, state);
     snprintf(state, sizeof(state), "%u events / %s", gCore.eventCount(), gSdLog.hasCardLog() ? "SD ready" : "NO SD LOG");
     gDisplay.setLine(3, state);
@@ -121,7 +122,7 @@ void setup() {
     if (gEvidence.attached()) caps |= link::evidence::kCapRawCapture;
     gServer.setMemoryOnly(!gSdLog.hasCardLog()); gServer.refresh();
     const bool ok = gLink.begin(caps); gLink.updateStatus();
-    Serial.printf("Hunter-TestHarness v2 normal-protocol name=%s session=%u ble=%u sd=%u evidence=%u led=off\n",
+    Serial.printf("Hunter-TestHarness v3 normal-protocol name=%s session=%u ble=%u sd=%u evidence=%u led=off\n",
                   gLink.advertisedName(), gLink.sessionId(), ok, gSdLog.hasCardLog(), gEvidence.attached());
 }
 void loop() {
@@ -137,7 +138,9 @@ void loop() {
     noteRun(now); gCore.tick(now);
     const bool changed = gWasConnected != gLink.connected();
     if (changed) gSdLog.noteLink(gLink.connected(), gLink.peerAddress(), now, gLink.sessionId());
-    if (gWasRunning && !gMonitor.running()) gSdLog.noteMode(gMonitor.complete() ? "fixture-complete" : "fixture-stopped", now);
+    if (!gWasComplete && gMonitor.complete()) gSdLog.noteMode("fixture-complete-monitoring", now);
+    if (gWasRunning && !gMonitor.running()) gSdLog.noteMode("monitoring-stopped", now);
+    gWasComplete = gMonitor.complete();
     gWasRunning = gMonitor.running(); gWasConnected = gLink.connected();
     if (gSdLog.service(now, 1, "harness", changed)) applyLed();
     serviceCardLink(); serviceCardClear(); saveWindows(now);
@@ -148,8 +151,8 @@ void loop() {
         char c = Serial.read();
         if (c == '\n') {
             gSerial.trim();
-            if (gSerial == "INFO") Serial.printf("HARNESS_INFO v2 normal-protocol connected=%u running=%u run=%lu elapsed=%lu events=%u sd=%u file=%s lines=%lu writeErrors=%lu dropped=%lu evidenceFiles=%lu requests=%lu lastCommand=%u result=%u led=off\n",
-                gLink.connected(), gMonitor.running(), static_cast<unsigned long>(gMonitor.runId()), static_cast<unsigned long>(gMonitor.elapsedMs()),
+            if (gSerial == "INFO") Serial.printf("HARNESS_INFO v3 normal-protocol connected=%u running=%u fixtureComplete=%u run=%lu elapsed=%lu events=%u sd=%u file=%s lines=%lu writeErrors=%lu dropped=%lu evidenceFiles=%lu requests=%lu lastCommand=%u result=%u led=off\n",
+                gLink.connected(), gMonitor.running(), gMonitor.complete(), static_cast<unsigned long>(gMonitor.runId()), static_cast<unsigned long>(gMonitor.elapsedMs()),
                 gCore.eventCount(), gSdLog.hasCardLog(), gSdLog.counters().fileName, static_cast<unsigned long>(gSdLog.counters().lines),
                 static_cast<unsigned long>(gSdLog.counters().writeErrors), static_cast<unsigned long>(gSdLog.dropped()),
                 static_cast<unsigned long>(gSdLog.counters().evidenceFiles), static_cast<unsigned long>(gLink.requestsAnswered()),

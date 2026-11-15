@@ -29,3 +29,13 @@ Firmware compilation and physical installation are separate from the operator-ru
 - Vixen remained on build 139 and its source checkout was not changed. Existing SD contents were retained.
 
 These checks establish firmware and protocol readiness for the operator-run compatibility scenario. They are not a completed phone scenario, RF sensing validation, or AI-warning acceptance.
+
+## Monitoring lifetime correction
+
+The first normal-protocol fixture automatically stopped monitoring at 61 seconds. The operator observed Vixen displaying STOPPED after the run. This was source behavior, not a two-hit limit or Vixen shutting down, and it did not represent ordinary ongoing Hunter monitoring.
+
+Firmware v3 separates fixture completion from monitoring state. At 61 seconds the sample sequence is exhausted, the display says Data done; monitoring, and the normal monitoring flag and selection remain active. Only the operator's Stop command or BOOT stop action ends monitoring. Start while monitoring remains idempotent; Stop then Start begins another fixture. The integration test advances past five minutes, checks that monitoring remains active and counts stay unchanged, and verifies explicit Stop/restart. Vixen is unchanged.
+
+## Sensor-selection instruction correction
+
+The operator saw two deauth events from separate starts and no AirTag. The recorded sensor mask excluded AirTag. The earlier instruction to select All Sensors was incorrect for this Vixen version: its quick preset uses the default list, which excludes trackers. The self-service steps now require enabling AirTag explicitly in Mission alongside Deauth and avoiding the default preset afterward. No app setting is changed by the assistant, and Vixen itself remains unchanged.

@@ -54,7 +54,8 @@ public:
             if (_before) _before(c, _beforeContext);
             if (_sink) _sink(c, _context);
         }
-        if (elapsed >= 61000) { _complete = true; stopManual(); }
+        // Fixture completion is independent of monitoring: only an operator Stop ends it.
+        if (elapsed >= 61000) _complete = true;
     }
     uint32_t runId() const { return _run; }
     uint32_t elapsedMs() const { return _everStarted ? _now - _started : 0; }

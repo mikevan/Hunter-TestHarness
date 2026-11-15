@@ -8,7 +8,7 @@ The harness now speaks the normal Hunter protocol. Vixen's **Start**, **Stop**, 
 
 1. Put an SD card in the test dongle and power it from a battery. Its display should say **Ready / stopped** and **SD ready**. The RGB LED stays off.
 2. Open Vixen. In **Ops**, tap **Scan**, select **Hunter-Test**, and tap **Connect**. Wait for **Connected**. USB is not required.
-3. Select **All Sensors** and the **All** monitoring selection if you want both observations. A disabled sensor or narrower selection intentionally filters its observations.
+3. Open **Mission**, enable **AirTag**, and ensure **Deauth** is enabled. Wait for the selection to be applied, then return to Ops. **Do not tap the current All Sensors preset afterward:** that preset restores a default list that excludes trackers, including AirTag. A disabled sensor or narrower selection intentionally filters its observations.
 4. Tap Vixen's normal **Start**, or press the dongle's **BOOT** button once. Use either control; do not press both to restart. The dongle shows **Running t+…s**, and Vixen's monitoring status should become active.
 5. Leave it running for at least 61 seconds and watch the normal **Events** view. No assistant action is needed.
 
@@ -17,11 +17,11 @@ The harness now speaks the normal Hunter protocol. Vixen's **Start**, **Stop**, 
 | 0–19 seconds | Baseline; no fixture detection yet. |
 | 20 seconds | A normal deauth event appears. Further sightings through 27 seconds bring its count to eight. Its normal packet-evidence window contains controlled 802.11 deauthentication frames. |
 | 50 seconds | A normal AirTag event appears. Further sightings through 53 seconds bring its count to four. |
-| 61 seconds | The scenario finishes. The dongle shows **Run complete**, monitoring stops, and the events remain available. |
+| 61 seconds | Fixture input finishes. The dongle shows **Data done; monitoring**. Monitoring, the connection, and saved events remain active until you press Stop. |
 
 Expect **two additional event rows per complete run**, not necessarily two total: previous runs are retained. Notification delivery follows Vixen's normal settings and permissions. BLE AirTag observations do not have a Wi-Fi PCAP attached.
 
-Tap **Stop** or press **BOOT** while running to stop early. Starting after Stop or completion creates a new run with fresh fixture identifiers. Repeated Start while already running does not reset its clock. Reconnecting does not clear events or restart the scenario; the source continues recording while the phone is away.
+Tap **Stop** or press **BOOT** while monitoring is active to stop. To repeat the scenario, **Stop, then Start**; this creates a new run with fresh fixture identifiers. Repeated Start while monitoring is already active does not reset its clock or replay a completed fixture. Reconnecting does not clear events or restart the scenario; the source continues recording while the phone is away.
 
 ## What this test establishes
 
