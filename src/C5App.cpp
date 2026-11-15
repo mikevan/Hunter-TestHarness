@@ -1485,7 +1485,7 @@ void setup()
     gLink.attachHunt(answerHuntRequest, nullptr);
     gLink.attachEvidence(answerEvidenceRequest, nullptr);
     gBleOk = gLink.begin(link::kCapLocalWifiMonitor | link::kCapLocalBleMonitor | link::kCapDisplay |
-                         link::kCapLed | link::kCapButton | link::hunt::kCapHunt | link::kCapSensorSet |
+                         link::kCapLed | link::kCapButton | link::hunt::kCapHunt | link::kCapSensorSet | link::kCapRemoteId | link::kCapObservationTime |
                          link::card::kCapCardRead | link::card::kCapCardClear |
                          (gEvidence.attached() ? (link::evidence::kCapRawCapture | link::kCapEvidenceHold) : 0));
     const bool heapAfterBle = heapIntact();

@@ -58,6 +58,12 @@ void bleManufacturerThunk(uint8_t index, std::string &out, const void *context)
     out = static_cast<const NimBLEAdvertisedDevice *>(context)->getManufacturerData(index);
 }
 
+bool bleRemoteIdThunk(std::string& out,const void* context) {
+    const auto* device=static_cast<const NimBLEAdvertisedDevice*>(context);
+    out=device->getServiceData(NimBLEUUID(uint16_t(0xfffa)));
+    return !out.empty();
+}
+
 bool bleUuid16Thunk(uint8_t index, uint16_t &out, const void *context)
 {
     const NimBLEUUID uuid = static_cast<const NimBLEAdvertisedDevice *>(context)->getServiceUUID(index);
@@ -461,6 +467,7 @@ void C5ReconRadio::handleBleAdvertisement(const NimBLEAdvertisedDevice *device)
     advert.manufacturer = bleManufacturerThunk;
     advert.uuidCount = device->haveServiceUUID() ? device->getServiceUUIDCount() : 0;
     advert.uuid16 = bleUuid16Thunk;
+    advert.remoteIdServiceData = bleRemoteIdThunk;
     advert.context = device;
 
     recon::classifyBleAdvert(advert, _currentBleScanDetector, bleCandidateThunk, this);

@@ -105,9 +105,9 @@ void noteRun(uint32_t now) {
     gSdLog.noteMode(mode, now);
     // Use the normal event-log queue: the SD driver allows one open file,
     // so a second sidecar must not be opened alongside the active log.
-    gSdLog.noteMode("FIXTURE deauth-then-airtag", now);
+    gSdLog.noteMode("FIXTURE deauth-eapol-remoteid", now);
     gSdLog.noteMode("synthetic; no RF transmission", now);
-    Serial.printf("RUN id=%lu normal Hunter protocol; deauth at 20s, AirTag at 50s\n", static_cast<unsigned long>(gLoggedRun));
+    Serial.printf("RUN id=%lu normal Hunter protocol; deauth at 20s, EAPOL at 32s, Remote ID at 50s\n", static_cast<unsigned long>(gLoggedRun));
 }
 void showStatus(uint32_t now) {
     if (now - gLastDisplay < 500) return;
@@ -139,12 +139,12 @@ void setup() {
     CorePorts ports; ports.monitor = &gMonitor; ports.eventLog = &gRecorder; gCore.attach(ports);
     gLink.attachServer(&gServer); gLink.attachEvidence(answerEvidence, nullptr);
     uint16_t caps = link::kCapLocalWifiMonitor | link::kCapLocalBleMonitor | link::kCapDisplay |
-                    link::kCapButton | link::kCapSensorSet | link::kCapEvidenceHold |
+                    link::kCapButton | link::kCapRemoteId | link::kCapObservationTime | link::kCapSensorSet | link::kCapEvidenceHold |
                     link::card::kCapCardRead | link::card::kCapCardClear;
     if (gEvidence.attached()) caps |= link::evidence::kCapRawCapture;
     gServer.setMemoryOnly(!gSdLog.hasCardLog()); gServer.refresh();
     const bool ok = gLink.begin(caps); gLink.updateStatus();
-    Serial.printf("Hunter-TestHarness v4 normal-protocol name=%s session=%u ble=%u sd=%u evidence=%u led=off\n",
+    Serial.printf("Hunter-TestHarness v5 normal-protocol name=%s session=%u ble=%u sd=%u evidence=%u led=off\n",
                   gLink.advertisedName(), gLink.sessionId(), ok, gSdLog.hasCardLog(), gEvidence.attached());
 }
 void loop() {
@@ -173,7 +173,7 @@ void loop() {
         char c = Serial.read();
         if (c == '\n') {
             gSerial.trim();
-            if (gSerial == "INFO") Serial.printf("HARNESS_INFO v4 normal-protocol connected=%u running=%u fixtureComplete=%u run=%lu elapsed=%lu events=%u sd=%u file=%s lines=%lu writeErrors=%lu dropped=%lu evidenceFiles=%lu requests=%lu lastCommand=%u result=%u led=off\n",
+            if (gSerial == "INFO") Serial.printf("HARNESS_INFO v5 normal-protocol connected=%u running=%u fixtureComplete=%u run=%lu elapsed=%lu events=%u sd=%u file=%s lines=%lu writeErrors=%lu dropped=%lu evidenceFiles=%lu requests=%lu lastCommand=%u result=%u led=off\n",
                 gLink.connected(), gMonitor.running(), gMonitor.complete(), static_cast<unsigned long>(gMonitor.runId()), static_cast<unsigned long>(gMonitor.elapsedMs()),
                 gCore.eventCount(), gSdLog.hasCardLog(), gSdLog.counters().fileName, static_cast<unsigned long>(gSdLog.counters().lines),
                 static_cast<unsigned long>(gSdLog.counters().writeErrors), static_cast<unsigned long>(gSdLog.dropped()),

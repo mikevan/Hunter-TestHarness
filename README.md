@@ -1,49 +1,48 @@
 # Hunter-TestHarness
 
-People relying on a warning system need evidence that it works. Hunter-TestHarness makes controlled inputs repeatable while the application under test follows its ordinary field workflow.
+People relying on a warning system need evidence that it works. Hunter-TestHarness makes controlled inputs repeatable while the application follows its ordinary field workflow.
 
-The harness now speaks the normal Hunter protocol. Vixen's **Start**, **Stop**, sensor selection, event list, text requests, packet evidence, and card transfer use the shared Hunter core and wire handlers. No Vixen test screen, custom vendor frame, or agent-controlled trigger is required.
+The dongle uses Hunter's shared core, commands, event records, packet evidence and card transfer. Vixen has no scenario screen or harness-specific analysis route. The operator starts the source; the ordinary application records and analyzes what arrives.
 
 ## Run it yourself
 
-1. Put an SD card in the test dongle and power it from a battery. Its display should say **Ready / stopped** and **SD ready**. The RGB LED stays off.
-2. Open Vixen. In **Ops**, tap **Scan**, select **Hunter-Test**, and tap **Connect**. Wait for **Connected**. USB is not required.
-3. Open **Mission**, enable **AirTag**, and ensure **Deauth** is enabled. Wait for the selection to be applied, then return to Ops. **Do not tap the current All Sensors preset afterward:** that preset restores a default list that excludes trackers, including AirTag. A disabled sensor or narrower selection intentionally filters its observations.
-4. Tap Vixen's normal **Start**, or press the dongle's **BOOT** button once. Use either control; do not press both to restart. The dongle shows **Running t+…s**, and Vixen's monitoring status should become active.
-5. Leave it running for at least 61 seconds and watch the normal **Events** view. No assistant action is needed.
+1. Put an SD card in the prototype and power it from a battery. Its display should say **Ready / stopped** and **SD ready**. The RGB LED stays off.
+2. In Vixen **Ops**, scan, select **Hunter-Test**, and connect. Wait for **Connected**. USB is not required.
+3. In **Mission**, enable **Deauth**, **EAPOL** and **Remote ID**. Leave trackers off. Wait for the selection to be applied. In Vixen 140, the ordinary **All Sensors** shortcut selects the default non-tracker set, including Remote ID on a supporting Hunter.
+4. Return to **Ops**. Press the dongle's **BOOT** button once, or use Vixen's normal **Start**. Use one control. No assistant action is needed.
+5. Watch the ordinary event view and the analysis status on Ops. Leave monitoring running after the input finishes.
 
-| Time from Start | Expected result with both sensors enabled |
+| Time from Start | Evidence |
 | --- | --- |
-| 0–19 seconds | Baseline; no fixture detection yet. |
-| 20 seconds | A normal deauth event appears. Further sightings through 27 seconds bring its count to eight. Its normal packet-evidence window contains controlled 802.11 deauthentication frames. |
-| 50 seconds | A normal AirTag event appears. Further sightings through 53 seconds bring its count to four. |
-| 61 seconds | Fixture input finishes. The dongle shows **Data done; monitoring**. Monitoring, the connection, and saved events remain active until you press Stop. |
+| 0–19 seconds | Baseline; no fixture detection. |
+| 20–27 seconds | Eight deauthentication sightings; the packet window contains controlled deauthentication frames. |
+| 32–35 seconds | Four EAPOL M1 sightings from the same observed transmitter address, with a complete EAPOL-Key packet body. |
+| 50–53 seconds | Four structured, unverified Remote ID Basic ID sightings. The normal detail field preserves the service-data bytes. |
+| 61 seconds | Input finishes; **Data done; monitoring**. Only the operator's Stop ends monitoring. |
 
-Expect **two additional event rows per complete run**, not necessarily two total: previous runs are retained. Notification delivery follows Vixen's normal settings and permissions. BLE AirTag observations do not have a Wi-Fi PCAP attached.
+Vixen's ordinary analysis workflow should move from waiting to analyzing and then display the supported sequence and its limitations. A timeout, unavailable model or rejected result is a test failure to preserve, not an all-clear. The model interprets a bounded evidence pattern; references and exact timing arithmetic come from procedural code. Its concise finding is rendered from the accepted pattern and preserved facts.
 
-Tap **Stop** or press **BOOT** while monitoring is active to stop. To repeat the scenario, **Stop, then Start**; this creates a new run with fresh fixture identifiers. Repeated Start while monitoring is already active does not reset its clock or replay a completed fixture. Reconnecting does not clear events or restart the scenario; the source continues recording while the phone is away.
+There are **three raw detector records per complete run**. Vixen may group the two Wi-Fi records into one emitter row, so expect two additional emitter rows rather than three. Prior evidence remains. Notification delivery follows ordinary permissions and sleep settings.
+
+To repeat, **Stop, then Start**. Repeated Start while already monitoring does not reset the clock or replay a completed fixture. Reconnection does not clear source events. Neither power-up nor BOOT formats the card.
 
 ## What this test establishes
 
-This is a controlled normal-protocol compatibility test: commands, status, evidence preservation, event display, and supported detection handling. The fixture observations and deauth packet bytes are synthetic and remain identified as such in the source's SD record. The harness does not transmit deauth traffic or impersonate a tracker over the air; it delivers controlled evidence through its Hunter BLE connection.
+This tests live BLE transport, normal commands, preservation, source-clock timing and automatic offline interpretation. The RF observations are synthetic; the source SD record identifies the fixture. No deauthentication traffic or drone-identification impersonation is transmitted over the air.
 
-**This run does not demonstrate the outage-followed-by-drone AI warning.** The current ordinary protocol has no dedicated outage/drone observation types, and Vixen's existing model qualification gate remains unchanged. An AirTag is not a drone. The original scenario's intended stages must not be relabelled as successful supported detections.
+Deauthentication requests do not prove a successful outage. EAPOL does not prove compromise. Remote ID is an unverified identification broadcast, not authenticated aircraft presence or intent. This sequence alone does not establish the separate Wi-Fi/BLE-outage evacuation policy or a coordinated attack. Actual RF receiver validation remains a separate field exercise.
 
 ## Evidence and independence
 
-The source uses Hunter's normal SD event log and stores its Wi-Fi packet windows as PCAP evidence. Fixture run provenance is recorded on the source card. Vixen receives ordinary event summaries, source/detail text, and packet windows; expected answers are not sent as model instructions.
+The source uses normal SD event logging and Wi-Fi PCAP windows. Vixen receives ordinary summaries, source/detail text, source uptime and packet windows. No expected answer or simulation instruction is sent to its model. Compare normal Vixen exports with the source card; preserve both.
 
-Use Vixen's normal evidence exports and the source SD records for comparison. Preserve prior records. **Clear Events** clears the current event mirror; **Clear Card** is the ordinary explicitly confirmed destructive card action. Neither is required to start a run. Power-up and BOOT never format the card.
+Freeze the application and model before a run. Change scenarios on the test source and record all artifact identities. The owner may approve a separate qualification package before the field run; remove it afterward. It supplies no product controls or records to field collections. See [the compatibility record](docs/normal-hunter-compatibility.md) and [Vixen's bounded AI workflow](https://github.com/mikevan/Vixen/blob/field/ecosystem-evidence-parity/docs/live-signature-mvp.md).
 
-The application stays fixed for a test. Change scenarios on this test device, record the firmware/application/model identities, and judge each result against the actual evidence. See [the compatibility repair and validation record](docs/normal-hunter-compatibility.md).
-
-## Build and inspect
+## Build
 
 ```text
 platformio run -e tdongle_c5_harness
 python test/run_harness_tests.py --cxx g++
 ```
 
-The host tests use a native C++17 compiler and the pinned shared libraries. Upload only after independently identifying the spare test board. The original Hunter checkout and Vixen are separate and unchanged by this firmware work.
-
-Serial `INFO` is read-only bench status. Field operation requires no serial console. Card maintenance remains a separate MAC-confirmed firmware target. The upstream Hunter remote has pushing disabled. [The legacy Hunter reference](docs/legacy-readme.md) preserves inherited product documentation.
+Use the default harness target only for the spare prototype. Identify its hardware before upload. The real Hunter device is separate. Serial `INFO` is read-only bench status; field operation needs no computer. [The legacy Hunter reference](docs/legacy-readme.md) retains inherited documentation.

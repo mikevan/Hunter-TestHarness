@@ -6,7 +6,7 @@
 
 namespace harness {
 // Controlled observations enter the same core sink as a real Hunter's monitor.
-// No extra wire type, expected answer, outage claim, or drone label is emitted.
+// Standard detector records, no extra wire type, expected answer or outage claim.
 class Monitor : public layertime::MonitorSource {
 public:
     using BeforeCandidate = void (*)(const layertime::recon::Candidate &, void *);
@@ -34,21 +34,23 @@ public:
     void poll() override {
         if (!_running) return;
         const uint32_t elapsed = _now - _started;
-        while (_next < 12 && elapsed >= offset(_next)) {
-            const bool wifi = _next < 8;
+        while (_next < 16 && elapsed >= offset(_next)) {
+            const bool deauth = _next < 8;
+            const bool wifi = _next < 12;
             layertime::recon::Candidate c;
-            c.detector = wifi ? layertime::ReconTarget::Deauth : layertime::ReconTarget::AirTag;
+            c.detector = deauth ? layertime::ReconTarget::Deauth : wifi ? layertime::ReconTarget::Eapol : layertime::ReconTarget::RemoteId;
             c.sourceKind = wifi ? layertime::SourceKind::Wifi : layertime::SourceKind::Ble;
             c.band = layertime::Band::Band2_4GHz;
             c.channel = wifi ? 6 : 0; c.rssi = wifi ? -48 : -55;
-            c.confidence = layertime::Confidence::High;
+            c.confidence = layertime::Confidence::Medium;
             c.atMs = _started + offset(_next);
             char address[19];
             snprintf(address, sizeof(address), "02:%02X:%02X:%02X:%02X:%02X",
                      unsigned((_run >> 24) & 255), unsigned((_run >> 16) & 255),
                      unsigned((_run >> 8) & 255), unsigned(_run & 255), wifi ? 1 : 2);
             c.address = address;
-            c.detail = wifi ? "Deauthentication burst" : "Find My advertisement";
+            c.detail = deauth ? "Deauthentication burst" : wifi ? "EAPOL handshake M1" :
+                "RID1:0D000212544553542D4841524E4553530000000000000000000000";
             ++_next;
             if (!layertime::recon::wants(true, _selected, false, c.detector)) continue;
             if (_before) _before(c, _beforeContext);
@@ -61,7 +63,7 @@ public:
     uint32_t elapsedMs() const { return _everStarted ? _now - _started : 0; }
     bool running() const { return _running; }
     bool complete() const { return _complete; }
-    static uint32_t offset(uint8_t i) { return i < 8 ? 20000U + i * 1000U : 50000U + (i - 8) * 1000U; }
+    static uint32_t offset(uint8_t i) { return i < 8 ? 20000U + i * 1000U : i < 12 ? 32000U + (i - 8) * 1000U : 50000U + (i - 12) * 1000U; }
 private:
     uint32_t _now = 0, _started = 0, _run = 0;
     uint8_t _next = 0;

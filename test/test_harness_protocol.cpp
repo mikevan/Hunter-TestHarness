@@ -63,17 +63,23 @@ int main() {
     link::evidence::answerGetFrameBytes(access,req,len,true,20,Frames::send,&frames);
     assert(!frames.rows.empty() && frames.rows.front()[0]==0x89);
     std::vector<uint8_t> pcap(evidence::kMaxWindowPcapBytes);assert(evidence::buildWindowPcap(f.store,1,32000,pcap.data(),pcap.size(),info)>24);
-    f.advance(51000);assert(f.core.eventCount()==2 && f.core.event(1).detector==ReconTarget::AirTag);
+    f.advance(51000);assert(f.core.eventCount()==3 && f.core.event(1).detector==ReconTarget::Eapol && f.core.event(2).detector==ReconTarget::RemoteId);
     f.advance(62000);assert(f.monitor.running() && f.monitor.complete() && f.core.event(1).count==4);
+    assert(f.core.event(0).firstSeen.uptimeMs==21000 && f.core.event(1).firstSeen.uptimeMs==33000 && f.core.event(2).firstSeen.uptimeMs==51000);
+    assert(strlen(f.core.event(2).detail)==59 && strncmp(f.core.event(2).detail,"RID1:",5)==0);
+    auto times=f.request({5,10,1,0,0,0,2},62000);std::string sourceTime;
+    for(const auto& raw:times.rows)if(raw[0]==0x86){link::Text t;assert(link::decodeText(raw.data(),raw.size(),t));sourceTime.append(reinterpret_cast<const char*>(t.bytes),t.length);}
+    assert(sourceTime=="uptime-ms:21000:28000");
+    evidence::WindowInfo eapolWindow;assert(f.store.info(2,62000,eapolWindow));assert(eapolWindow.retained==24);
     link::StatusSnapshot status;f.server.fillStatus(status);
     assert((status.flags & link::kFlagMonitoring) && status.active==1);
     f.command(1,1);assert(f.monitor.runId()==run); // data completion must not turn Start into replay
-    f.advance(301000);assert(f.monitor.running() && f.core.eventCount()==2 && f.core.event(0).count==8 && f.core.event(1).count==4);
+    f.advance(301000);assert(f.monitor.running() && f.core.eventCount()==3 && f.core.event(0).count==8 && f.core.event(1).count==4 && f.core.event(2).count==4);
     f.server.fillStatus(status);assert((status.flags & link::kFlagMonitoring) && status.active==1);
-    f.server.reset();f.server.refresh();auto reconnect=f.request({4,11,0,0,0,0},62000);assert(reconnect.rows.size()==3 && f.core.eventCount()==2);
-    f.command(2);assert(!f.monitor.running());f.command(1,1);assert(f.monitor.runId()!=run);f.advance(321000);assert(f.core.eventCount()==3 && f.core.event(2).eventId==3);
-    f.command(2);assert(f.core.eventCount()==3);f.advance(401000);assert(f.core.eventCount()==3);
-    f.command(4);f.command(3);assert(f.core.eventCount()==0);f.command(1,1);f.advance(421000);assert(f.core.event(0).eventId>3);
+    f.server.reset();f.server.refresh();auto reconnect=f.request({4,11,0,0,0,0},62000);assert(reconnect.rows.size()==4 && f.core.eventCount()==3);
+    f.command(2);assert(!f.monitor.running());f.command(1,1);assert(f.monitor.runId()!=run);f.advance(321000);assert(f.core.eventCount()==4 && f.core.event(3).eventId==4);
+    f.command(2);assert(f.core.eventCount()==4);f.advance(401000);assert(f.core.eventCount()==4);
+    f.command(4);f.command(3);assert(f.core.eventCount()==0);f.command(1,1);f.advance(421000);assert(f.core.event(0).eventId>4);
     // Selected sensors are filtered by the actual core command path.
     Fixture masked;uint32_t mask=1u<<5;
     auto result=masked.request({3,12,15,uint8_t(mask),uint8_t(mask>>8),uint8_t(mask>>16),uint8_t(mask>>24)});
@@ -81,10 +87,10 @@ int main() {
     masked.command(1,1);masked.advance(62000);assert(masked.core.eventCount()==1 && masked.core.event(0).detector==ReconTarget::Deauth);
     auto invalid=masked.request({3,12,15,255,255,255,255});assert(invalid.rows[0][4]==2);
     masked.command(16,30);masked.command(16,31,CommandResult::InvalidArgument);
-    Fixture selected;selected.command(1,10);selected.advance(62000);assert(selected.core.eventCount()==1 && selected.core.event(0).detector==ReconTarget::AirTag);
+    Fixture selected;selected.command(1,19);selected.advance(62000);assert(selected.core.eventCount()==1 && selected.core.event(0).detector==ReconTarget::RemoteId);
     // Stop cancels pending observations; source timing survives uint32 uptime wrap.
     Fixture stopped;stopped.command(1,1);stopped.advance(11000);stopped.command(2);stopped.advance(62000);assert(stopped.core.eventCount()==0);
-    Fixture wrap;wrap.monitor.setNow(0xfffff000u);wrap.command(1,1);wrap.advance(uint32_t(0xfffff000u+61000u));assert(wrap.core.eventCount()==2 && wrap.monitor.complete() && wrap.monitor.running());
+    Fixture wrap;wrap.monitor.setNow(0xfffff000u);wrap.command(1,1);wrap.advance(uint32_t(0xfffff000u+61000u));assert(wrap.core.eventCount()==3 && wrap.monitor.complete() && wrap.monitor.running());
     // Legacy vendor payload is not emitted by any standard response.
     for(const auto &row:reconnect.rows)assert(row[0]!=0xE0);
     puts("PASS: normal commands/status/events/text, timing, idempotent Start, Stop, sensor filters, reconnect retention, event identities, raw evidence and PCAP, monitoring retained after completion, uptime wrap");

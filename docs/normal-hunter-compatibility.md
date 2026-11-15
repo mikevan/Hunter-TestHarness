@@ -43,3 +43,10 @@ The operator saw two deauth events from separate starts and no AirTag. The recor
 ## LED and connection indicators
 
 The owner confirmed the RGB LED is dark after the dedicated GPIO 4/5 shutdown update. The manufacturer's current C5 pin map assigns APA102 clock/data to those pins; earlier hardware shared the display SPI bus, so the legacy bus shutdown remains too. Repeated writes of unchanged display labels were removed. The eye follows the actual phone link; the face/cheek remains red with no implemented mesh connection. No mesh connection is invented for the fixture.
+
+
+## Three-stage signature input, v5
+
+The next fixture emits eight deauth sightings at 20–27 seconds, four EAPOL M1 sightings at 32–35 seconds and four structured Remote ID Basic ID observations at 50–53 seconds. The Wi-Fi records share an observed transmitter identifier; Remote ID is not authenticated presence or intent. Complete EAPOL-Key bytes and the Remote ID service data are retained. Normal GET_TEXT field 2 supplies first/latest source uptime under its advertised capability. Existing frames remain unchanged.
+
+Host integration checks passed normal command/result/status/text, all three detector stages, Wi-Fi packet retention, source-time fragmentation, repeated Start, explicit Stop, selection masks, reconnect retention and uptime wrap. All 22 shared-core and 10 sensor suites passed. Vixen 140 uses its ordinary foreground-service analysis workflow and normal Ops display; it has no fixture controls. The separate owner-approved phone qualification package was removed before the operator run. The RGB shutdown and honest eye/mesh indicators remain in place.
