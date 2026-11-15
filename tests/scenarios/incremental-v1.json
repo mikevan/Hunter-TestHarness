@@ -1,9 +1,9 @@
 {
   "schema": "hunter-incremental-field-plan/1",
-  "status": "B0-phone-pass; T1-implemented-awaiting-operator",
+  "status": "T2: original frozen-149 FAIL retained; operator rerun PASS on Vixen 150 after procedural selection fix",
   "trainingAllowed": false,
   "scope": "Synthetic RF observations over live normal Hunter BLE; no RF attack or Remote ID broadcast transmission",
-  "frozenApplication": "Vixen 141 after repaired-baseline acceptance; same model, settings, prompt, grammar and guards for all three new tests",
+  "frozenApplication": "T1 passed on Vixen 141. T2 uses installed Vixen 149 after separately approved UI changes; freeze that APK and the same model throughout T2.",
   "modelSha256": "3d529dd89436601669d6d92f9c67793f35d7ba3a71bfe15cb44ae9547e7f194c",
   "configuredWindowMs": 90000,
   "reportDeadlineAfterRequiredEvidenceMs": 30000,
@@ -73,7 +73,8 @@
       "expectedGapMs": 62000,
       "expectedPositiveNotificationCount": 1,
       "duplicateTransportRequirement": "Each summary is delivered three times within its ordinary matching request; END counts delivered summaries. Text chunks are not duplicated. No source counts or timestamps change.",
-      "implementationNote": "Narrowed from the original summary/text duplicate plan: duplicate fragments within one text reply would alter reconstructed text. Repeated text transactions are not forced by this harness."
+      "implementationNote": "Narrowed from the original summary/text duplicate plan: duplicate fragments within one text reply would alter reconstructed text. Repeated text transactions are not forced by this harness.",
+      "status": "Operator PASS on Vixen 141; counts 8/4/4; 48/24 packets; 62s gap; report in 2500ms; one notification; monitoring continued"
     },
     {
       "id": "T2-separate-the-streams",
@@ -126,7 +127,8 @@
         "network-C"
       ],
       "expectedGapMs": 62000,
-      "expectedPositiveNotificationCount": 1
+      "expectedPositiveNotificationCount": 1,
+      "status": "Original 149 FAIL retained. Rerun 150 PASS: selected A/A/drone events 1/2/5, 62000ms gap, report in 7509ms, one analysis/notification, packet windows 48/24/48/24 verified, monitoring continued."
     },
     {
       "id": "T3-gap-and-boundary",

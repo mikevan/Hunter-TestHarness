@@ -42,7 +42,44 @@ struct Fixture : EventLog {
         assert(result.reqId==7 && result.commandType==kind && result.commandResult==static_cast<uint8_t>(expected));
     }
 };
-#if defined(LAYERTIME_HARNESS_T1)
+#if defined(LAYERTIME_HARNESS_T2)
+int main() {
+    Fixture f; f.command(1,1); const auto run=f.monitor.runId();
+    f.advance(30000);assert(f.core.eventCount()==1 && f.core.event(0).count==8);
+    f.advance(44000);assert(f.core.eventCount()==2 && f.core.event(1).count==4);
+    f.advance(63000);assert(f.core.eventCount()==3 && f.core.event(2).count==8);
+    f.advance(72000);assert(f.core.eventCount()==4 && f.core.event(3).count==4);
+    f.advance(88000);assert(f.core.eventCount()==5 && f.core.event(4).count==4);
+    const unsigned counts[]={8,4,8,4,4};
+    const unsigned detectors[]={5,18,5,18,19};
+    const unsigned first[]={21000,38000,56000,66000,83000};
+    const unsigned last[]={30000,44000,63000,72000,88000};
+    for(unsigned i=0;i<5;++i) {
+        auto &e=f.core.event(i);
+        assert(e.count==counts[i] && unsigned(e.detector)==detectors[i]);
+        assert(e.firstSeen.uptimeMs==first[i] && e.lastSeen.uptimeMs==last[i]);
+    }
+    assert(strcmp(f.core.event(0).sourceId,f.core.event(1).sourceId)==0);
+    assert(strcmp(f.core.event(2).sourceId,f.core.event(0).sourceId)!=0);
+    assert(strcmp(f.core.event(3).sourceId,f.core.event(0).sourceId)!=0);
+    assert(strcmp(f.core.event(2).sourceId,f.core.event(3).sourceId)!=0);
+    assert(f.core.event(4).firstSeen.uptimeMs-f.core.event(0).firstSeen.uptimeMs==62000);
+    for(unsigned i=0;i<4;++i) {
+        evidence::WindowInfo w;assert(f.store.info(i+1,96000,w));
+        assert(!w.collecting && w.retained==(i%2==0?48:24));
+    }
+    auto reply=f.request({4,9,0,0,0,0},88000);assert(reply.rows.size()==6);
+    Frames delivered;
+    for(auto &row:reply.rows)harness::reply(row.data(),row.size(),true,
+        [&](const uint8_t *b,size_t n){Frames::add(b,n,&delivered);});
+    assert(delivered.rows.size()==16 && delivered.rows.back()[3]==15);
+    for(unsigned i=0;i<5;++i)for(unsigned j=0;j<3;++j)assert(delivered.rows[i*3+j]==reply.rows[i]);
+    f.advance(301000);f.command(1,1);assert(f.monitor.runId()==run && f.monitor.running() && f.monitor.complete());
+    assert(f.core.eventCount()==5);
+    for(unsigned i=0;i<5;++i)assert(f.core.event(i).count==counts[i]);
+    puts("PASS T2: separate A/B/C identities, 62s source gap, counts 8/4/8/4/4, four complete packet windows, duplicate replies and continued monitoring");
+}
+#elif defined(LAYERTIME_HARNESS_T1)
 int main() {
     Fixture f; f.command(1,1); const auto run=f.monitor.runId();
     f.advance(20999); assert(f.core.eventCount()==0);

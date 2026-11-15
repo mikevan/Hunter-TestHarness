@@ -85,3 +85,111 @@ Computer checks passed for both baseline and T1: ordinary commands, source
 timing, unchanged counts, complete 48/24 packet windows, repeated summaries
 with matching END count, intact text replies, and continued monitoring. These
 checks do not substitute for the pending operator-run T1 on the phone.
+
+
+## T1 result and T2 source preparation — 2026-11-15
+
+The operator's T1 run passed on frozen Vixen 141: source counts 8/4/4, 48 deauth
+and 24 complete EAPOL-Key frames preserved, correct 62-second relationship,
+one accepted analysis and notification, and continued monitoring. The report
+completed 2,500 ms after receipt of the first required drone observation.
+The comparison was read-only and did not operate either device.
+
+T2 is prepared as the separate `tdongle_c5_harness_t2` target. It inherits T1's
+summary duplication, keeps text and packet transport unchanged, and adds:
+
+- Network B: eight deauth observations at 55, 56, 57, 58, 59, 60, 61 and 62 seconds.
+- Network C: four EAPOL observations at 65, 67, 69 and 71 seconds.
+
+The original network A still has eight deauth observations from 20 to 29 seconds
+and four EAPOL observations from 37 to 43 seconds. Drone observations remain at
+82, 83.5, 85.7 and 87 seconds. A, B and C have distinct per-run source addresses;
+only A has both kinds of Wi-Fi observation. Expected event counts in source
+order: 8/4/8/4/4. Four packet windows must preserve 48/24/48/24 frames, respectively.
+The complete drone service-data payload must remain intact.
+
+The phone is now Vixen 149, after the separately approved product UI work. The
+T1 outcome remains a build-141 result. T2 freezes the installed Vixen 149 APK and
+existing model: no application, prompt, model, sensor-setting or inference
+changes are part of this preparation. Its installed APK hash is recorded in
+the local preparation ledger. T2's expected positive interpretation is still
+the valid A sequence with a 62-second source-clock gap and one notification;
+B's disconnects must not be paired with C's handshakes. This is an acceptance
+criterion, not a claim that the frozen product already passes.
+
+The physical T2 test is not yet run. Only the operator starts it through normal
+Start/Stop or the physical button. The harness stays idle after programming;
+completion of the observations at 95 seconds does not stop monitoring. No SD
+format, deletion or original-Hunter update is part of this preparation.
+
+T2 preparation completed: all three host profiles passed, the prototype app
+firmware was hash-verified after upload, and read-only INFO confirmed
+`T2-separate-streams`, idle, zero events, SD ready, zero write errors and LED off.
+The prototype was disconnected from BLE at that check; the operator connects
+through Vixen before pressing Start. No physical scenario was started.
+
+
+## T2 operator result — FAIL, 2026-11-15
+
+Frozen Vixen 149 received all five source events in one Hunter session, with
+counts 8/4/8/4/4. The four closed native packet windows were pulled read-only
+from saved phone files and verified against their journal SHA-256 hashes:
+48 A deauth, 24 A complete EAPOL-Key, 48 B deauth and 24 C complete EAPOL-Key
+frames. Their source-address suffixes matched A/A/B/C. The drone service data
+and source-clock first sightings were saved; the valid A-to-drone gap was
+62,000 ms. Monitoring was still active after the expected report deadline.
+
+No signature-analysis journal entry and no saved assessment existed for this
+session when checked after the operator reported 2 minutes 30 seconds without
+a report. This fails T2's required interpretation and notification. Packet
+preservation passed; the end-to-end test did not.
+
+`LiveSignatureInput.prepare` first selects the newest deauth record within a
+producer/session, then searches only that record's network for EAPOL. In this
+run the newer deauth is B, which correctly has no matching EAPOL. The selector
+therefore returns no prepared input instead of considering the older valid A
+pair. C's EAPOL remains separate, but the A pair is hidden. This is a procedural
+candidate-selection failure before inference, not an observed wrong answer
+from the model. Missing analysis must not be described as a negative finding.
+
+The frozen app and harness were not operated or modified during comparison.
+Original journal, native captures, hashes and the failed outcome are preserved
+in the local T2 operator ledger. No corrected result replaces this failure.
+
+
+## T2 operator rerun — PASS on build 150, 2026-11-15
+
+The first start after installing 150 was stopped after roughly 3.4 seconds,
+before the first 20-second observation. It is recorded as an aborted attempt,
+not an AI failure or a passing run. The operator restarted without assistant
+device control. The subsequent complete run passed.
+
+All five source records arrived with counts 8/4/8/4/4. The accepted assessment
+selected events 1 and 2 from network A and drone event 5; unrelated B and C
+records 3 and 4 were retained separately. The model returned
+`disconnect_sequence_then_remote_id`; the saved report correctly stated the
+62-second source-clock gap. Completion was 7,509 ms after first drone-summary
+receipt, within the 30-second target. The journal recorded one accepted AI
+analysis and one posted notification despite repeated summaries. Monitoring
+remained active after fixture completion.
+
+Four closed PCAPs were pulled from saved phone files and matched their journal
+SHA-256 hashes. They held 48/24/48/24 frames with matching A/A/B/C source MACs,
+zero dropped/truncated frames, and complete 95-byte EAPOL-Key bodies. The drone
+service-data payload and full input/raw result were retained. Comparison used
+read-only app-file access; neither device was operated by the observer.
+
+The original frozen-149 failure remains above and in its separate evidence
+ledger. This rerun used the same harness firmware and model with Vixen 150's
+procedural selection repair. It verifies this live synthetic BLE scenario;
+independent source SD parity and physical RF detection were not tested here.
+
+
+### Remaining recommendation gap
+
+The operator noted after the successful T2 correlation rerun that build 150's
+report contains no action recommendation. This remains an outstanding MVP report
+requirement. The T2 acceptance result covers its defined correlation, packet
+preservation, duplicate handling, notification and latency checks; it does not
+establish a complete actionable MVP report or validate the recommendation
+proposed in conversation. No recommendation change was made for this run.

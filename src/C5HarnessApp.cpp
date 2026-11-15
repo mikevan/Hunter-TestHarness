@@ -107,7 +107,7 @@ void noteRun(uint32_t now) {
     // so a second sidecar must not be opened alongside the active log.
     gSdLog.noteMode(harness::Monitor::profile(), now);
     gSdLog.noteMode("synthetic; no RF transmission", now);
-    Serial.printf("RUN id=%lu profile=%s deauth=%lu EAPOL=%lu RemoteID=%lu ms\n", static_cast<unsigned long>(gLoggedRun), harness::Monitor::profile(), static_cast<unsigned long>(harness::Monitor::offset(0)), static_cast<unsigned long>(harness::Monitor::offset(8)), static_cast<unsigned long>(harness::Monitor::offset(12)));
+    Serial.printf("RUN id=%lu profile=%s deauth=%lu EAPOL=%lu RemoteID=%lu ms\n", static_cast<unsigned long>(gLoggedRun), harness::Monitor::profile(), static_cast<unsigned long>(harness::Monitor::offset(0)), static_cast<unsigned long>(harness::Monitor::offset(8)), static_cast<unsigned long>(harness::Monitor::offset(harness::Monitor::observationCount()-4)));
 }
 void showStatus(uint32_t now) {
     if (now - gLastDisplay < 500) return;

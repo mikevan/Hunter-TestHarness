@@ -34,9 +34,19 @@ public:
     void poll() override {
         if (!_running) return;
         const uint32_t elapsed = _now - _started;
-        while (_next < 16 && elapsed >= offset(_next)) {
-            const bool deauth = _next < 8;
-            const bool wifi = _next < 12;
+        while (_next < observationCount() && elapsed >= offset(_next)) {
+            const bool deauth = _next < 8
+#if defined(LAYERTIME_HARNESS_T2)
+                || (_next >= 12 && _next < 20)
+#endif
+                ;
+            const bool wifi = _next <
+#if defined(LAYERTIME_HARNESS_T2)
+                24
+#else
+                12
+#endif
+                ;
             layertime::recon::Candidate c;
             c.detector = deauth ? layertime::ReconTarget::Deauth : wifi ? layertime::ReconTarget::Eapol : layertime::ReconTarget::RemoteId;
             c.sourceKind = wifi ? layertime::SourceKind::Wifi : layertime::SourceKind::Ble;
@@ -47,7 +57,7 @@ public:
             char address[19];
             snprintf(address, sizeof(address), "02:%02X:%02X:%02X:%02X:%02X",
                      unsigned((_run >> 24) & 255), unsigned((_run >> 16) & 255),
-                     unsigned((_run >> 8) & 255), unsigned(_run & 255), wifi ? 1 : 2);
+                     unsigned((_run >> 8) & 255), unsigned(_run & 255), sourceSuffix(_next));
             c.address = address;
             c.detail = deauth ? "Deauthentication burst" : wifi ? "EAPOL handshake M1" :
                 "RID1:0D000212544553542D4841524E4553530000000000000000000000";
@@ -63,22 +73,43 @@ public:
     uint32_t elapsedMs() const { return _everStarted ? _now - _started : 0; }
     bool running() const { return _running; }
     bool complete() const { return _complete; }
+    static uint8_t observationCount() {
+#if defined(LAYERTIME_HARNESS_T2)
+        return 28;
+#else
+        return 16;
+#endif
+    }
+    static uint8_t sourceSuffix(uint8_t i) {
+#if defined(LAYERTIME_HARNESS_T2)
+        return i<12 ? 1 : i<20 ? 3 : i<24 ? 4 : 2;
+#else
+        return i<12 ? 1 : 2;
+#endif
+    }
     static uint32_t completionMs() {
-#if defined(LAYERTIME_HARNESS_T1)
+#if defined(LAYERTIME_HARNESS_T1) || defined(LAYERTIME_HARNESS_T2)
         return 95000;
 #else
         return 61000;
 #endif
     }
     static const char *profile() {
-#if defined(LAYERTIME_HARNESS_T1)
+#if defined(LAYERTIME_HARNESS_T2)
+        return "T2-separate-streams";
+#elif defined(LAYERTIME_HARNESS_T1)
         return "T1-timing-duplicates";
 #else
         return "B0-baseline";
 #endif
     }
     static uint32_t offset(uint8_t i) {
-#if defined(LAYERTIME_HARNESS_T1)
+#if defined(LAYERTIME_HARNESS_T2)
+        static const uint32_t times[] = {20000,21000,22500,24000,25000,26800,28000,29000,
+            37000,38700,41000,43000,55000,56000,57000,58000,59000,60000,61000,62000,
+            65000,67000,69000,71000,82000,83500,85700,87000};
+        return times[i];
+#elif defined(LAYERTIME_HARNESS_T1)
         static const uint32_t times[] = {20000,21000,22500,24000,25000,26800,28000,29000,37000,38700,41000,43000,82000,83500,85700,87000};
         return times[i];
 #else
