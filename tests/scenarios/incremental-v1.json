@@ -1,6 +1,6 @@
 {
   "schema": "hunter-incremental-field-plan/1",
-  "status": "defined-not-executed",
+  "status": "B0-phone-pass; T1-implemented-awaiting-operator",
   "trainingAllowed": false,
   "scope": "Synthetic RF observations over live normal Hunter BLE; no RF attack or Remote ID broadcast transmission",
   "frozenApplication": "Vixen 141 after repaired-baseline acceptance; same model, settings, prompt, grammar and guards for all three new tests",
@@ -39,12 +39,12 @@
       "deauthFrames": 48,
       "eapolFrames": 24
     },
-    "status": "Prior interpretation passed; repaired preservation awaits operator rerun"
+    "status": "Vixen 141 operator rerun passed: 48 deauth and 24 complete EAPOL-Key frames preserved and hashed; correct AI pattern, notification posted, monitoring continued. Source SD parity not independently verified."
   },
   "tests": [
     {
       "id": "T1-timing-and-duplicates",
-      "adds": "Irregular sighting intervals and repeated delivery of identical summaries/text without increasing source counts",
+      "adds": "Irregular sighting intervals and repeated identical complete event summaries without increasing source counts; text replies remain intact",
       "observations": [
         {
           "kind": "deauth",
@@ -72,7 +72,8 @@
       "expectedPattern": "disconnect_sequence_then_remote_id",
       "expectedGapMs": 62000,
       "expectedPositiveNotificationCount": 1,
-      "duplicateTransportRequirement": "Ordinary matching request IDs/framing; repeated replies do not create new source observations"
+      "duplicateTransportRequirement": "Each summary is delivered three times within its ordinary matching request; END counts delivered summaries. Text chunks are not duplicated. No source counts or timestamps change.",
+      "implementationNote": "Narrowed from the original summary/text duplicate plan: duplicate fragments within one text reply would alter reconstructed text. Repeated text transactions are not forced by this harness."
     },
     {
       "id": "T2-separate-the-streams",

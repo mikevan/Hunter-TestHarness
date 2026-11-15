@@ -1,3 +1,6 @@
+#if defined(LAYERTIME_HARNESS_T1)
+#include "HarnessReplies.h"
+#endif
 // LayerTime - passive early-warning firmware for the LILYGO T-Dongle-C5.
 //
 // Copyright (C) 2026 Michael Van Geertruy
@@ -220,7 +223,14 @@ void C5Link::pushFrame(const uint8_t *frame, size_t len, void *self)
     me->lockIo();
     // A reply to a central that has since gone is dropped, so the next
     // central does not find the pipe busy with it.
-    if (me->_answeringConnection == me->_connection) me->_pipe.push(frame, len);
+    if (me->_answeringConnection == me->_connection) {
+#if defined(LAYERTIME_HARNESS_T1)
+        harness::reply(frame, len, me->_t1ChangedReply,
+            [me](const uint8_t *b, size_t n) { me->_pipe.push(b,n); });
+#else
+        me->_pipe.push(frame, len);
+#endif
+    }
     me->unlockIo();
 }
 
@@ -252,6 +262,9 @@ void C5Link::serviceRequests(uint32_t nowMs)
     _answeringConnection = _connection;
     unlockIo();
     if (n > 0) {
+#if defined(LAYERTIME_HARNESS_T1)
+        _t1ChangedReply = request[0] == 4;
+#endif
 #if defined(LAYERTIME_MEASURE)
         if (request[0] == link::measure::kOpBulk) {
             runBulk(request, n);

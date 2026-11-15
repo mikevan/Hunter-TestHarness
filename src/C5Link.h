@@ -184,6 +184,9 @@ private:
     uint32_t _requestsAnswered = 0;
     uint32_t _busyReplies = 0;
     uint32_t _framesSent = 0;
+#if defined(LAYERTIME_HARNESS_T1)
+    bool _t1ChangedReply = false;
+#endif
     uint32_t _notifyRefused = 0;
     uint32_t _changeNotifies = 0;
     bool _connected = false;

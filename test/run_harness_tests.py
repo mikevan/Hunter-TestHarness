@@ -16,5 +16,6 @@ with tempfile.TemporaryDirectory(prefix="hunter-harness-tests-") as temp:
     cmd += [str(root/"test/test_harness_protocol.cpp")]
     cmd += [str(x) for x in sorted(core.rglob("*.cpp"))]
     cmd += [str(x) for x in sorted(sensors.rglob("*.cpp"))]
-    subprocess.run(cmd+["-o", str(exe)], check=True)
-    subprocess.run([str(exe)], check=True)
+    for profile in ([], ["-DLAYERTIME_HARNESS_T1"]):
+        subprocess.run(cmd+profile+["-o", str(exe)], check=True)
+        subprocess.run([str(exe)], check=True)

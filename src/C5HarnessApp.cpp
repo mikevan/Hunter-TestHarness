@@ -105,9 +105,9 @@ void noteRun(uint32_t now) {
     gSdLog.noteMode(mode, now);
     // Use the normal event-log queue: the SD driver allows one open file,
     // so a second sidecar must not be opened alongside the active log.
-    gSdLog.noteMode("FIXTURE deauth-eapol-remoteid", now);
+    gSdLog.noteMode(harness::Monitor::profile(), now);
     gSdLog.noteMode("synthetic; no RF transmission", now);
-    Serial.printf("RUN id=%lu normal Hunter protocol; deauth at 20s, EAPOL at 32s, Remote ID at 50s\n", static_cast<unsigned long>(gLoggedRun));
+    Serial.printf("RUN id=%lu profile=%s deauth=%lu EAPOL=%lu RemoteID=%lu ms\n", static_cast<unsigned long>(gLoggedRun), harness::Monitor::profile(), static_cast<unsigned long>(harness::Monitor::offset(0)), static_cast<unsigned long>(harness::Monitor::offset(8)), static_cast<unsigned long>(harness::Monitor::offset(12)));
 }
 void showStatus(uint32_t now) {
     if (now - gLastDisplay < 500) return;
@@ -144,7 +144,7 @@ void setup() {
     if (gEvidence.attached()) caps |= link::evidence::kCapRawCapture;
     gServer.setMemoryOnly(!gSdLog.hasCardLog()); gServer.refresh();
     const bool ok = gLink.begin(caps); gLink.updateStatus();
-    Serial.printf("Hunter-TestHarness v5 normal-protocol name=%s session=%u ble=%u sd=%u evidence=%u led=off\n",
+    Serial.printf("Hunter-TestHarness v6 normal-protocol name=%s session=%u ble=%u sd=%u evidence=%u led=off\n",
                   gLink.advertisedName(), gLink.sessionId(), ok, gSdLog.hasCardLog(), gEvidence.attached());
 }
 void loop() {
@@ -173,8 +173,8 @@ void loop() {
         char c = Serial.read();
         if (c == '\n') {
             gSerial.trim();
-            if (gSerial == "INFO") Serial.printf("HARNESS_INFO v5 normal-protocol connected=%u running=%u fixtureComplete=%u run=%lu elapsed=%lu events=%u sd=%u file=%s lines=%lu writeErrors=%lu dropped=%lu evidenceFiles=%lu requests=%lu lastCommand=%u result=%u led=off\n",
-                gLink.connected(), gMonitor.running(), gMonitor.complete(), static_cast<unsigned long>(gMonitor.runId()), static_cast<unsigned long>(gMonitor.elapsedMs()),
+            if (gSerial == "INFO") Serial.printf("HARNESS_INFO v6 profile=%s normal-protocol connected=%u running=%u fixtureComplete=%u run=%lu elapsed=%lu events=%u sd=%u file=%s lines=%lu writeErrors=%lu dropped=%lu evidenceFiles=%lu requests=%lu lastCommand=%u result=%u led=off\n",
+                harness::Monitor::profile(), gLink.connected(), gMonitor.running(), gMonitor.complete(), static_cast<unsigned long>(gMonitor.runId()), static_cast<unsigned long>(gMonitor.elapsedMs()),
                 gCore.eventCount(), gSdLog.hasCardLog(), gSdLog.counters().fileName, static_cast<unsigned long>(gSdLog.counters().lines),
                 static_cast<unsigned long>(gSdLog.counters().writeErrors), static_cast<unsigned long>(gSdLog.dropped()),
                 static_cast<unsigned long>(gSdLog.counters().evidenceFiles), static_cast<unsigned long>(gLink.requestsAnswered()),

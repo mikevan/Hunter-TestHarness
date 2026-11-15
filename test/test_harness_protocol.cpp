@@ -5,6 +5,7 @@
 #include <string>
 #include "HarnessMonitor.h"
 #include "HarnessEvidence.h"
+#include "HarnessReplies.h"
 #include "core/app/LayerTimeCore.h"
 #include "core/link/LinkServer.h"
 #include "core/link/LinkEvidence.h"
@@ -41,6 +42,45 @@ struct Fixture : EventLog {
         assert(result.reqId==7 && result.commandType==kind && result.commandResult==static_cast<uint8_t>(expected));
     }
 };
+#if defined(LAYERTIME_HARNESS_T1)
+int main() {
+    Fixture f; f.command(1,1); const auto run=f.monitor.runId();
+    f.advance(20999); assert(f.core.eventCount()==0);
+    f.advance(21000); assert(f.core.eventCount()==1);
+    f.advance(30000); assert(f.core.event(0).count==8);
+    f.advance(38000); assert(f.core.eventCount()==2);
+    f.advance(44000); assert(f.core.event(1).count==4);
+    f.advance(82999); assert(f.core.eventCount()==2);
+    f.advance(88000); assert(f.core.eventCount()==3 && f.core.event(2).count==4);
+    assert(f.core.event(2).firstSeen.uptimeMs-f.core.event(0).firstSeen.uptimeMs==62000);
+    assert(f.core.event(0).lastSeen.uptimeMs==30000 && f.core.event(1).lastSeen.uptimeMs==44000);
+    evidence::WindowInfo d,e; assert(f.store.info(1,96000,d) && d.retained==48);
+    assert(f.store.info(2,96000,e) && e.retained==24);
+    auto first=f.request({4,9,0,0,0,0},88000);
+    Frames delivered;
+    for(const auto &row:first.rows) harness::reply(row.data(),row.size(),true,
+        [&](const uint8_t *b,size_t n){Frames::add(b,n,&delivered);});
+    assert(delivered.rows.size()==10 && delivered.rows.back()[3]==9);
+    for(int i=0;i<3;++i) for(int j=0;j<3;++j)
+        assert(delivered.rows[i*3+j]==first.rows[i]);
+    auto text=f.request({5,12,1,0,0,0,2},88000); Frames copied;
+    for(const auto &row:text.rows) harness::reply(row.data(),row.size(),false,
+        [&](const uint8_t *b,size_t n){Frames::add(b,n,&copied);});
+    assert(copied.rows==text.rows);
+    auto again=f.request({4,10,0,0,0,0},88000);
+    assert(first.rows.size()==4 && again.rows.size()==4);
+    for(int i=0;i<3;++i) {
+        link::EventSummary a,b;
+        assert(link::decodeEventSummary(first.rows[i].data(),first.rows[i].size(),a));
+        assert(link::decodeEventSummary(again.rows[i].data(),again.rows[i].size(),b));
+        assert(a.eventId==b.eventId && a.count==b.count);
+    }
+    f.advance(301000); f.command(1,1);
+    assert(f.monitor.runId()==run && f.monitor.complete() && f.monitor.running());
+    assert(f.core.eventCount()==3 && f.core.event(0).count==8 && f.core.event(1).count==4 && f.core.event(2).count==4);
+    puts("PASS T1: irregular timing, 62s gap, counts 8/4/4, 48/24 packet windows, repeated requests and monitoring retained");
+}
+#else
 int main() {
     // Normal command/result and status, with idempotent Start and real event/text replies.
     Fixture f;f.command(1,1);const auto run=f.monitor.runId();f.advance(11000);f.command(1,1);
@@ -95,3 +135,5 @@ int main() {
     for(const auto &row:reconnect.rows)assert(row[0]!=0xE0);
     puts("PASS: normal commands/status/events/text, timing, idempotent Start, Stop, sensor filters, reconnect retention, event identities, raw evidence and PCAP, monitoring retained after completion, uptime wrap");
 }
+
+#endif

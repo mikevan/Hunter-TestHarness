@@ -57,13 +57,34 @@ public:
             if (_sink) _sink(c, _context);
         }
         // Fixture completion is independent of monitoring: only an operator Stop ends it.
-        if (elapsed >= 61000) _complete = true;
+        if (elapsed >= completionMs()) _complete = true;
     }
     uint32_t runId() const { return _run; }
     uint32_t elapsedMs() const { return _everStarted ? _now - _started : 0; }
     bool running() const { return _running; }
     bool complete() const { return _complete; }
-    static uint32_t offset(uint8_t i) { return i < 8 ? 20000U + i * 1000U : i < 12 ? 32000U + (i - 8) * 1000U : 50000U + (i - 12) * 1000U; }
+    static uint32_t completionMs() {
+#if defined(LAYERTIME_HARNESS_T1)
+        return 95000;
+#else
+        return 61000;
+#endif
+    }
+    static const char *profile() {
+#if defined(LAYERTIME_HARNESS_T1)
+        return "T1-timing-duplicates";
+#else
+        return "B0-baseline";
+#endif
+    }
+    static uint32_t offset(uint8_t i) {
+#if defined(LAYERTIME_HARNESS_T1)
+        static const uint32_t times[] = {20000,21000,22500,24000,25000,26800,28000,29000,37000,38700,41000,43000,82000,83500,85700,87000};
+        return times[i];
+#else
+ return i < 8 ? 20000U + i * 1000U : i < 12 ? 32000U + (i - 8) * 1000U : 50000U + (i - 12) * 1000U;
+#endif
+    }
 private:
     uint32_t _now = 0, _started = 0, _run = 0;
     uint8_t _next = 0;

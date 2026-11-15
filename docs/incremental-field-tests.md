@@ -12,7 +12,7 @@ Do not mark this repair physically verified until the new EAPOL transfer is obse
 
 ## Test 1: Timing variation and duplicate delivery
 
-**What gets harder:** the source no longer presents evenly spaced sightings, and some summaries/text are delivered twice. Source counts and source timestamps remain unchanged by duplicate transport. Repeated replies must respect ordinary request IDs and framing, such as replies to normal retries; malformed or unsolicited messages are not equivalent duplicates.
+**What gets harder:** the source no longer presents evenly spaced sightings, and each event summary is delivered three times; text replies stay intact. Source counts and source timestamps remain unchanged by duplicate transport. Repeated replies must respect ordinary request IDs and framing, such as replies to normal retries; malformed or unsolicited messages are not equivalent duplicates.
 
 Deauth starts at 20 seconds; EAPOL for the same observed network identifier starts at 37 seconds; Remote ID starts at 82 seconds. The supported gap is **62 seconds**, within the 90-second window. Sightings continue irregularly until 29, 43 and 87 seconds respectively.
 
@@ -41,3 +41,47 @@ After the repaired baseline, keep Vixen 141 and its model, prompt, grammar, sens
 Record source firmware and APK/model hashes, operator start, source first/last timestamps, counts, packet payloads, transport gaps, raw model output, assessment latency, notification submission and continued monitoring. Qualify actual notification display separately from submission to Android. Observer logging is read-only and must not initiate a scenario or alter decisions. Preserve a failure before making a separately versioned product fix; restart qualification after such a fix instead of changing the application mid-series.
 
 [Machine-readable reference plan](../tests/scenarios/incremental-v1.json) keeps expected answers outside model input. These authored synthetic cases are evaluation references, not independent field incidents or training data. RF receiver sensitivity, a real outage, drone intent and T-Ultra corroboration remain separate field validations.
+
+## Repaired baseline verification and T1 preparation — 2026-11-15
+
+The operator reran the baseline on Vixen 141. The saved phone evidence contained
+48 deauthentication frames and 24 EAPOL frames. Each EAPOL frame retained the
+complete 95-byte EAPOL-Key body, rather than just an EtherType marker. The
+closed PCAP and payload hashes matched the journal. The AI returned
+`disconnect_sequence_then_remote_id` for the 30-second source-clock gap;
+its result was current, the notification was posted, and monitoring continued.
+The saved report completed 5,778 ms after Vixen first received the Remote ID
+summary, within the 30-second analysis target.
+This verifies phone-side preservation and normal AI integration for synthetic
+observations. Independent source-SD parity and real RF detection were not tested.
+The previous build's EAPOL preservation failure remains a historical failure.
+
+T1 uses the separate `tdongle_c5_harness_t1` firmware target. The baseline target
+remains available. Vixen 141 and the model stay unchanged. T1 is not yet a
+physical-test pass.
+
+The exact observation offsets (milliseconds from operator Start) are:
+
+- Deauth: 20000, 21000, 22500, 24000, 25000, 26800, 28000, 29000.
+- EAPOL: 37000, 38700, 41000, 43000.
+- Remote ID: 82000, 83500, 85700, 87000.
+
+Each normal event-summary reply is delivered three times, with the same event
+identity, observation count, source timestamps and request ID. END reports the
+number of summary frames delivered. Packet transport is unchanged. Text replies
+remain intact: the original plan to duplicate text fragments was narrowed
+because repeating fragments inside one reply changes the reconstructed text.
+This run does not claim to test repeated complete text transactions.
+
+Use a battery after programming. Connect through Vixen's normal interface;
+use normal Stop then Start, or the dongle's physical button, to begin a fresh
+run. Leave the same sensors enabled. Expect the final stage from 82 seconds,
+then allow 30 seconds for analysis. Only the operator starts the run.
+The fixture ends at 95 seconds but monitoring continues until operator Stop.
+Check the 62-second relationship, counts 8/4/4, preserved 48/24 packet windows,
+and absence of duplicate notifications for identical completed input.
+
+Computer checks passed for both baseline and T1: ordinary commands, source
+timing, unchanged counts, complete 48/24 packet windows, repeated summaries
+with matching END count, intact text replies, and continued monitoring. These
+checks do not substitute for the pending operator-run T1 on the phone.
