@@ -96,16 +96,6 @@ uint16_t nonZeroSessionId()
 
 } // namespace
 
-#if defined(LAYERTIME_HARNESS_APP)
-bool C5Link::sendHarness(const uint8_t *frame, size_t len)
-{
-    if (!_connected || !gData || len != 20) return false;
-    lockIo();
-    const bool sent = gData->notify(frame, len);
-    unlockIo();
-    return sent;
-}
-#endif
 
 void C5Link::lockIo() const
 {
@@ -128,9 +118,6 @@ bool C5Link::begin(uint16_t capabilities)
 #endif
     _status.sessionId = _identity.sessionId;
     _status.changeSeq = 1;
-#if defined(LAYERTIME_HARNESS_APP)
-    _status.changeSeq = 0; // This source has no ordinary RF event mirror to poll.
-#endif
 
     uint8_t mac[6] = {};
     esp_read_mac(mac, ESP_MAC_BT);

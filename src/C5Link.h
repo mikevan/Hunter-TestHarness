@@ -53,9 +53,6 @@ public:
     // Starts NimBLE, builds the service, and begins advertising as
     // "LT-C5-xxxx". Returns false if NimBLE could not initialise.
     bool begin(uint16_t capabilities);
-#if defined(LAYERTIME_HARNESS_APP)
-    bool sendHarness(const uint8_t *frame, size_t len);
-#endif
 
     // Runs the one-second heartbeat, and on a Recon Node the change
     // notification (within 200 ms of a change). Call from loop().

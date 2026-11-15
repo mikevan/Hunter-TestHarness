@@ -1,31 +1,49 @@
 # Hunter-TestHarness
 
-People relying on a warning system need evidence that it works. We must be able to show what succeeds, what fails, and what observations support that judgement.
+People relying on a warning system need evidence that it works. Hunter-TestHarness makes controlled inputs repeatable while the application under test follows its ordinary field workflow.
 
-Hunter-TestHarness exists to make that proof repeatable. It lets us ask whether Vixen preserves a developing event's evidence, interprets the changing pattern, and delivers a useful warning in time.
+The harness now speaks the normal Hunter protocol. Vixen's **Start**, **Stop**, sensor selection, event list, text requests, packet evidence, and card transfer use the shared Hunter core and wire handlers. No Vixen test screen, custom vendor frame, or agent-controlled trigger is required.
 
-## How we evaluate it
+## Run it yourself
 
-A dedicated, battery-powered device sends controlled observations over a real Bluetooth connection. Press BOOT to start a new timed scenario. The SD card records each accepted notification with its exact bytes, run/session identifiers, and source time so the transmitted record can be compared with the receiving system.
+1. Put an SD card in the test dongle and power it from a battery. Its display should say **Ready / stopped** and **SD ready**. The RGB LED stays off.
+2. Open Vixen. In **Ops**, tap **Scan**, select **Hunter-Test**, and tap **Connect**. Wait for **Connected**. USB is not required.
+3. Select **All Sensors** and the **All** monitoring selection if you want both observations. A disabled sensor or narrower selection intentionally filters its observations.
+4. Tap Vixen's normal **Start**, or press the dongle's **BOOT** button once. Use either control; do not press both to restart. The dongle shows **Running t+…s**, and Vixen's monitoring status should become active.
+5. Leave it running for at least 61 seconds and watch the normal **Events** view. No assistant action is needed.
 
-A valid end-to-end acceptance test uses the released Vixen application and its ordinary field workflow. Pre-existing instrumentation may measure that workflow; it must not change its decisions or provide a separate route to success. Repeat runs need independent identities, preserved evidence, and explicit expected outcomes.
+| Time from Start | Expected result with both sensors enabled |
+| --- | --- |
+| 0–19 seconds | Baseline; no fixture detection yet. |
+| 20 seconds | A normal deauth event appears. Further sightings through 27 seconds bring its count to eight. Its normal packet-evidence window contains controlled 802.11 deauthentication frames. |
+| 50 seconds | A normal AirTag event appears. Further sightings through 53 seconds bring its count to four. |
+| 61 seconds | The scenario finishes. The dongle shows **Run complete**, monitoring stops, and the events remain available. |
 
-## What the device provides
+Expect **two additional event rows per complete run**, not necessarily two total: previous runs are retained. Notification delivery follows Vixen's normal settings and permissions. BLE AirTag observations do not have a Wi-Fi PCAP attached.
 
-Connect a compatible receiver to `Hunter-Test-C5-…`, then press BOOT. Over real wall-clock time it transmits baseline counts (0–10 s), a local Wi-Fi/BLE drop (10–20 s), stipulated outage observations (20 s), a drone-signature observation (50 s), and completion (61 s). Both observations use the source's common run clock. Each run has a new ID and sequenced 20-byte BLE notifications. A disconnect aborts the source run; a new press starts a new run. The RGB LED stays off.
+Tap **Stop** or press **BOOT** while running to stop early. Starting after Stop or completion creates a new run with fresh fixture identifiers. Repeated Start while already running does not reset its clock. Reconnecting does not clear events or restart the scenario; the source continues recording while the phone is away.
 
-Baseline counts are 120 Wi-Fi and 80 BLE records per ten seconds; outage counts are zero. Source health and selected coverage are stipulated fixture inputs. No historical file is played on the phone, and the device does not create a physical outage or establish drone-detector accuracy.
+## What this test establishes
 
-## Current integration limit
+This is a controlled normal-protocol compatibility test: commands, status, evidence preservation, event display, and supported detection handling. The fixture observations and deauth packet bytes are synthetic and remain identified as such in the source's SD record. The harness does not transmit deauth traffic or impersonate a tracker over the air; it delivers controlled evidence through its Hunter BLE connection.
 
-This is a controlled telemetry source, not a demonstration that the ordinary field warning workflow succeeds. Its experimental vendor message format still requires integration with Vixen's ordinary evidence workflow. The earlier separate test interface is not the acceptance path. Test provenance belongs in the evidence record; it must not coach the model toward the expected answer.
+**This run does not demonstrate the outage-followed-by-drone AI warning.** The current ordinary protocol has no dedicated outage/drone observation types, and Vixen's existing model qualification gate remains unchanged. An AirTag is not a drone. The original scenario's intended stages must not be relabelled as successful supported detections.
 
-## Implementation and operation
+## Evidence and independence
 
-This repository is an independent full copy of Hunter with pinned dependencies. The upstream remote has pushing disabled. The default firmware target is `tdongle_c5_harness`; the original Hunter checkout remains separate.
+The source uses Hunter's normal SD event log and stores its Wi-Fi packet windows as PCAP evidence. Fixture run provenance is recorded on the source card. Vixen receives ordinary event summaries, source/detail text, and packet windows; expected answers are not sent as model instructions.
 
-Card maintenance is a separate build, never triggered by BOOT or startup. INFO identifies the attached chip; clearing requires its exact `CLEAR-SD-<chip MAC>` confirmation. No private device identity is embedded in source.
+Use Vixen's normal evidence exports and the source SD records for comparison. Preserve prior records. **Clear Events** clears the current event mirror; **Clear Card** is the ordinary explicitly confirmed destructive card action. Neither is required to start a run. Power-up and BOOT never format the card.
 
-Wire extension: HELLO capability `0x8000`, Data type `0xE0`, length 20: version u8 at 1, stage u8 at 2, flags u8 at 3 (receiver health bit 0, selected coverage bit 1, SD recording bit 2, SD error bit 3), run u32 at 4, elapsed ms u32 at 8, sequence u16 at 12, Wi-Fi/BLE/drone counts u16 at 14/16/18, all little-endian. Stage 1 baseline; 2 drop; 3 confirmed outage; 4 drone; 5 complete. Never decode these packets as ordinary Hunter RF detections.
+The application stays fixed for a test. Change scenarios on this test device, record the firmware/application/model identities, and judge each result against the actual evidence. See [the compatibility repair and validation record](docs/normal-hunter-compatibility.md).
 
-Build: `platformio run -e tdongle_c5_harness`. Upload only to an independently identified spare board. The original Hunter documentation is retained in [the legacy reference](docs/legacy-readme.md). Hunter is the capture product; this repository is the controlled test source.
+## Build and inspect
+
+```text
+platformio run -e tdongle_c5_harness
+python test/run_harness_tests.py --cxx g++
+```
+
+The host tests use a native C++17 compiler and the pinned shared libraries. Upload only after independently identifying the spare test board. The original Hunter checkout and Vixen are separate and unchanged by this firmware work.
+
+Serial `INFO` is read-only bench status. Field operation requires no serial console. Card maintenance remains a separate MAC-confirmed firmware target. The upstream Hunter remote has pushing disabled. [The legacy Hunter reference](docs/legacy-readme.md) preserves inherited product documentation.
